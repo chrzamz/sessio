@@ -1,0 +1,70 @@
+name: Release
+
+# Triggered by pushing a tag like v0.2.0. Build universal macOS binary
+# (Apple Silicon + Intel) and attach it to a GitHub Release.
+#
+# Workflow before tagging:
+#   1. Bump version in package.json, src-tauri/Cargo.toml, src-tauri/tauri.conf.json
+#   2. Commit the bump
+#   3. git tag v0.2.0 && git push origin v0.2.0
+#   4. Watch the Actions tab; release appears under "Releases" when done.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build & publish macOS (universal)
+    runs-on: macos-14
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build & publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Sessio ${{ github.ref_name }}'
+          releaseBody: |
+            ## Install
+
+            Download the `.dmg` below, mount it, drag **Sessio** to Applications.
+
+            > ⚠️ **Unsigned build.** macOS will warn about an unidentified developer.
+            > Right-click the app → **Open** → confirm. Sessio is an OSS project and
+            > does not (yet) pay for an Apple Developer membership. Source is auditable.
+
+            ## Changes
+
+            See [PROGRESS.md](https://github.com/chrzamz/sessio/blob/main/PROGRESS.md)
+            for the change log.
+          releaseDraft: false
+          prerelease: true
+          args: --target universal-apple-darwin

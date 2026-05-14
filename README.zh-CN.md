@@ -8,6 +8,7 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
+[![CI](https://github.com/chrzamz/sessio/actions/workflows/ci.yml/badge.svg)](https://github.com/chrzamz/sessio/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE-APACHE)
 [![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri%20v2-24C8DB?logo=tauri)](https://tauri.app/)
