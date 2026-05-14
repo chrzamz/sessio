@@ -1,6 +1,6 @@
 <div align="center">
 
-# Sessio
+<img src="public/sessio-logo.svg" alt="Sessio" width="320" />
 
 **Unified search & browse for your Claude Code and Codex CLI conversations.**
 

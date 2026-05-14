@@ -29,6 +29,9 @@ export function Sidebar({
 }: SidebarProps) {
   return (
     <div className="w-56 shrink-0 border-r border-zinc-200 bg-zinc-50 flex flex-col h-full overflow-y-auto">
+      <div className="px-3 pt-3 pb-2">
+        <img src="/sessio-logo.svg" alt="Sessio" className="h-8" />
+      </div>
       <div className="p-3 border-b border-zinc-200">
         <button
           onClick={onScan}
