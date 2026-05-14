@@ -55,6 +55,12 @@ export interface ProjectInfo {
   dir_exists: boolean;
 }
 
+export interface ProjectAlias {
+  alias_dir: string;
+  canonical_dir: string;
+  created_at: string;
+}
+
 export interface SessionFilter {
   tool: string | null;
   project: string | null;

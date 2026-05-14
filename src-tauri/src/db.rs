@@ -65,10 +65,17 @@ impl Database {
                 INSERT INTO messages_fts(messages_fts, rowid, content) VALUES('delete', old.rowid, old.content);
             END;
 
+            CREATE TABLE IF NOT EXISTS project_aliases (
+                alias_dir TEXT PRIMARY KEY,
+                canonical_dir TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_sessions_tool ON sessions(tool);
             CREATE INDEX IF NOT EXISTS idx_sessions_project ON sessions(project_dir);
             CREATE INDEX IF NOT EXISTS idx_sessions_updated ON sessions(updated_at DESC);
             CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id);
+            CREATE INDEX IF NOT EXISTS idx_aliases_canonical ON project_aliases(canonical_dir);
             ",
         )
         .context("Failed to initialize database schema")?;
@@ -150,8 +157,11 @@ impl Database {
             params.push(Box::new(tool.to_string()));
         }
         if let Some(project) = project_filter {
-            sql.push_str(" AND project_dir LIKE ?");
-            params.push(Box::new(format!("%{}%", project)));
+            sql.push_str(
+                " AND (project_dir = ? OR project_dir IN (SELECT alias_dir FROM project_aliases WHERE canonical_dir = ?))",
+            );
+            params.push(Box::new(project.to_string()));
+            params.push(Box::new(project.to_string()));
         }
         if starred_only {
             sql.push_str(" AND starred = 1");
@@ -288,12 +298,30 @@ impl Database {
 
     pub fn get_projects(&self) -> Result<Vec<ProjectInfo>> {
         let conn = self.conn.lock().unwrap();
+        // Resolve each session's project_dir through aliases, then group by the
+        // effective (canonical) dir. project_name prefers a row where the
+        // session's original dir equals the effective dir, so a merged alias
+        // shows the canonical's name rather than the renamed-away one.
         let mut stmt = conn.prepare(
-            "SELECT project_dir, MIN(project_name), COUNT(*) as count
-             FROM sessions
-             WHERE project_dir IS NOT NULL AND is_subagent = 0
-             GROUP BY project_dir
-             ORDER BY count DESC",
+            "WITH resolved AS (
+                SELECT
+                    COALESCE(a.canonical_dir, s.project_dir) AS effective_dir,
+                    s.project_dir AS original_dir,
+                    s.project_name
+                FROM sessions s
+                LEFT JOIN project_aliases a ON s.project_dir = a.alias_dir
+                WHERE s.project_dir IS NOT NULL AND s.is_subagent = 0
+            )
+            SELECT
+                effective_dir,
+                COALESCE(
+                    MAX(CASE WHEN original_dir = effective_dir THEN project_name END),
+                    MIN(project_name)
+                ) AS project_name,
+                COUNT(*) AS count
+            FROM resolved
+            GROUP BY effective_dir
+            ORDER BY count DESC",
         )?;
 
         let rows = stmt.query_map([], |row| {
@@ -310,6 +338,65 @@ impl Database {
             })
         })?;
 
+        let mut results = Vec::new();
+        for row in rows {
+            results.push(row?);
+        }
+        Ok(results)
+    }
+
+    pub fn merge_project(&self, alias_dir: &str, canonical_dir: &str) -> Result<()> {
+        if alias_dir == canonical_dir {
+            anyhow::bail!("alias_dir and canonical_dir must differ");
+        }
+        let conn = self.conn.lock().unwrap();
+        // Guard against chains: if the chosen canonical is itself an alias,
+        // resolve transitively so we always point at a real root.
+        let resolved_canonical: String = conn
+            .query_row(
+                "SELECT canonical_dir FROM project_aliases WHERE alias_dir = ?1",
+                rusqlite::params![canonical_dir],
+                |row| row.get(0),
+            )
+            .unwrap_or_else(|_| canonical_dir.to_string());
+
+        if alias_dir == resolved_canonical {
+            anyhow::bail!("would create alias cycle");
+        }
+
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO project_aliases (alias_dir, canonical_dir, created_at)
+             VALUES (?1, ?2, ?3)
+             ON CONFLICT(alias_dir) DO UPDATE SET
+                canonical_dir = excluded.canonical_dir,
+                created_at = excluded.created_at",
+            rusqlite::params![alias_dir, resolved_canonical, now],
+        )?;
+        Ok(())
+    }
+
+    pub fn unmerge_project(&self, alias_dir: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM project_aliases WHERE alias_dir = ?1",
+            rusqlite::params![alias_dir],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_aliases(&self) -> Result<Vec<ProjectAlias>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT alias_dir, canonical_dir, created_at FROM project_aliases ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(ProjectAlias {
+                alias_dir: row.get(0)?,
+                canonical_dir: row.get(1)?,
+                created_at: row.get(2)?,
+            })
+        })?;
         let mut results = Vec::new();
         for row in rows {
             results.push(row?);
@@ -371,4 +458,11 @@ pub struct ProjectInfo {
     pub project_name: Option<String>,
     pub session_count: u32,
     pub dir_exists: bool,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ProjectAlias {
+    pub alias_dir: String,
+    pub canonical_dir: String,
+    pub created_at: String,
 }

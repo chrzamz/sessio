@@ -7,6 +7,7 @@ import type {
   ScanResult,
   Stats,
   ProjectInfo,
+  ProjectAlias,
   SessionFilter,
 } from "../types";
 
@@ -52,6 +53,24 @@ export function useSessions() {
     return invoke<ProjectInfo[]>("get_projects");
   }, []);
 
+  const mergeProject = useCallback(
+    async (aliasDir: string, canonicalDir: string) => {
+      return invoke<void>("merge_project", {
+        aliasDir,
+        canonicalDir,
+      });
+    },
+    [],
+  );
+
+  const unmergeProject = useCallback(async (aliasDir: string) => {
+    return invoke<void>("unmerge_project", { aliasDir });
+  }, []);
+
+  const getAliases = useCallback(async () => {
+    return invoke<ProjectAlias[]>("get_aliases");
+  }, []);
+
   return {
     sessions,
     loading,
@@ -62,5 +81,8 @@ export function useSessions() {
     toggleStar,
     getStats,
     getProjects,
+    mergeProject,
+    unmergeProject,
+    getAliases,
   };
 }

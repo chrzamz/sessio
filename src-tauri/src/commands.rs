@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use tauri::{Manager, State};
 
-use crate::db::{Database, MessageDetail, ProjectInfo, SearchResult, SessionSummary, Stats};
+use crate::db::{Database, MessageDetail, ProjectAlias, ProjectInfo, SearchResult, SessionSummary, Stats};
 
 #[derive(Debug, Deserialize)]
 pub struct SessionFilter {
@@ -102,4 +102,24 @@ pub fn get_stats(db: State<'_, Database>) -> Result<Stats, String> {
 #[tauri::command]
 pub fn get_projects(db: State<'_, Database>) -> Result<Vec<ProjectInfo>, String> {
     db.get_projects().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn merge_project(
+    alias_dir: String,
+    canonical_dir: String,
+    db: State<'_, Database>,
+) -> Result<(), String> {
+    db.merge_project(&alias_dir, &canonical_dir)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn unmerge_project(alias_dir: String, db: State<'_, Database>) -> Result<(), String> {
+    db.unmerge_project(&alias_dir).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_aliases(db: State<'_, Database>) -> Result<Vec<ProjectAlias>, String> {
+    db.get_aliases().map_err(|e| e.to_string())
 }

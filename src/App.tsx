@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { SessionList } from "./components/SessionList";
 import { SessionDetail } from "./components/SessionDetail";
+import { MergeDialog } from "./components/MergeDialog";
 import { useSessions } from "./hooks/useSessions";
 import type { SessionSummary, Stats, ProjectInfo } from "./types";
 
@@ -14,6 +15,7 @@ function App() {
     toggleStar,
     getStats,
     getProjects,
+    mergeProject,
   } = useSessions();
 
   const [stats, setStats] = useState<Stats | null>(null);
@@ -26,6 +28,7 @@ function App() {
   const [scanning, setScanning] = useState(false);
   const [toast, setToast] = useState<{ msg: string; kind: "success" | "error" } | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const [mergeSource, setMergeSource] = useState<ProjectInfo | null>(null);
 
   const refreshData = useCallback(async () => {
     await loadSessions({
@@ -87,6 +90,30 @@ function App() {
     await refreshData();
   };
 
+  const handleMergeConfirm = async (canonicalDir: string) => {
+    if (!mergeSource?.project_dir) return;
+    const aliasDir = mergeSource.project_dir;
+    try {
+      await mergeProject(aliasDir, canonicalDir);
+      if (projectFilter === aliasDir) {
+        setProjectFilter(canonicalDir);
+      }
+      setMergeSource(null);
+      await refreshData();
+      setToast({ msg: "项目已合并", kind: "success" });
+    } catch (e) {
+      setToast({ msg: `合并失败：${String(e)}`, kind: "error" });
+    } finally {
+      if (toastTimerRef.current !== null) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+      toastTimerRef.current = window.setTimeout(() => {
+        setToast(null);
+        toastTimerRef.current = null;
+      }, 3000);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-white text-zinc-900">
       <Sidebar
@@ -100,6 +127,7 @@ function App() {
         onStarredOnly={setStarredOnly}
         onScan={handleScan}
         scanning={scanning}
+        onMergeRequest={setMergeSource}
       />
       <SessionList
         sessions={sessions}
@@ -111,6 +139,16 @@ function App() {
         onSearch={handleSearch}
       />
       <SessionDetail session={selectedSession} />
+      {mergeSource && (
+        <MergeDialog
+          source={mergeSource}
+          candidates={projects.filter(
+            (p) => p.dir_exists && p.project_dir && p.project_dir !== mergeSource.project_dir,
+          )}
+          onConfirm={handleMergeConfirm}
+          onCancel={() => setMergeSource(null)}
+        />
+      )}
       {toast && (
         <div
           role="status"

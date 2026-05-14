@@ -11,6 +11,7 @@ interface SidebarProps {
   onStarredOnly: (v: boolean) => void;
   onScan: () => void;
   scanning: boolean;
+  onMergeRequest: (source: ProjectInfo) => void;
 }
 
 export function Sidebar({
@@ -24,6 +25,7 @@ export function Sidebar({
   onStarredOnly,
   onScan,
   scanning,
+  onMergeRequest,
 }: SidebarProps) {
   return (
     <div className="w-56 shrink-0 border-r border-zinc-200 bg-zinc-50 flex flex-col h-full overflow-y-auto">
@@ -114,26 +116,44 @@ export function Sidebar({
             All projects
           </button>
           {projects.map((p) => (
-            <button
+            <div
               key={p.project_dir ?? ""}
-              onClick={() => onProjectFilter(p.project_dir || "")}
-              className={`block w-full text-left px-2 py-1 text-xs rounded truncate ${
+              className={`group flex items-center rounded ${
                 projectFilter === p.project_dir
-                  ? "bg-zinc-200 text-zinc-900 font-medium"
-                  : "text-zinc-500 hover:bg-zinc-100"
-              } ${!p.dir_exists ? "opacity-50" : ""}`}
-              title={
-                p.dir_exists === false
-                  ? `${p.project_dir ?? ""} (directory no longer exists)`
-                  : p.project_dir || ""
-              }
+                  ? "bg-zinc-200"
+                  : "hover:bg-zinc-100"
+              } ${!p.dir_exists ? "opacity-60" : ""}`}
             >
-              {!p.dir_exists && <span className="mr-1" aria-label="missing directory">⊘</span>}
-              <span className={!p.dir_exists ? "line-through" : ""}>
-                {p.project_name || "unknown"}
-              </span>{" "}
-              <span className="text-zinc-400">({p.session_count})</span>
-            </button>
+              <button
+                onClick={() => onProjectFilter(p.project_dir || "")}
+                className={`flex-1 min-w-0 text-left px-2 py-1 text-xs truncate ${
+                  projectFilter === p.project_dir
+                    ? "text-zinc-900 font-medium"
+                    : "text-zinc-500"
+                }`}
+                title={
+                  p.dir_exists === false
+                    ? `${p.project_dir ?? ""} (directory no longer exists)`
+                    : p.project_dir || ""
+                }
+              >
+                {!p.dir_exists && <span className="mr-1" aria-label="missing directory">⊘</span>}
+                <span className={!p.dir_exists ? "line-through" : ""}>
+                  {p.project_name || "unknown"}
+                </span>{" "}
+                <span className="text-zinc-400">({p.session_count})</span>
+              </button>
+              {!p.dir_exists && (
+                <button
+                  onClick={() => onMergeRequest(p)}
+                  className="px-1.5 py-1 text-xs text-zinc-400 hover:text-zinc-900 opacity-0 group-hover:opacity-100"
+                  title="Merge into another project"
+                  aria-label="Merge into another project"
+                >
+                  →
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </div>

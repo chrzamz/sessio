@@ -26,6 +26,9 @@ pub fn run() {
             commands::toggle_star,
             commands::get_stats,
             commands::get_projects,
+            commands::merge_project,
+            commands::unmerge_project,
+            commands::get_aliases,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

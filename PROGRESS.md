@@ -31,9 +31,9 @@
 > 实施顺序：项目别名 → 增量索引 → 收藏 → 子代理折叠 → 性能 → e2e。
 > 前两项对日常自用收益最高，先做。
 
-- [ ] **项目别名（解决目录改名后历史"丢失"）**
+- [x] **项目别名（解决目录改名后历史"丢失"）**
   - 场景：`project-kanban` 改名为 `push-log` 后，老 JSONL 还在原编码目录，新会话写入新编码目录，UI 上变成两个独立的"项目"，老的还会被标 ⊘
-  - 方案 A（手动合并）：新表 `project_aliases (alias_dir, canonical_dir)`；右键 ⊘ 项目 → "合并到..." → 选活项目；侧栏隐藏 alias，session 数滚到 canonical；筛选时 alias = canonical
+  - 已实现方案 A（手动合并）：`project_aliases` 表 + `merge_project` / `unmerge_project` / `get_aliases` 命令 + 侧栏 ⊘ 项目 hover 显示 → 按钮 + MergeDialog 选活项目；侧栏隐藏 alias，session 数滚到 canonical；筛选时 alias 展开为 canonical + 所有指向它的 alias
 - [ ] 增量索引（按 mtime + size 跳过未变化的 JSONL）
 - [ ] 收藏标记
 - [ ] 子代理折叠
@@ -74,6 +74,10 @@
 - 不修改原始 JSONL 文件
 
 ## 变更日志
+
+### 2026-05-14
+- 项目重命名 `ai-session-hub` → `Sessio`，开源到 https://github.com/chrzamz/sessio（双协议 MIT/Apache-2.0，双语 README）
+- 项目别名落地：`project_aliases` 表 + 3 个 Tauri 命令 + `MergeDialog` 组件；改名后的失效目录可一键合并到新目录，session 数自动累加
 
 ### 2026-04-21
 - 侧边栏标识失效目录：`ProjectInfo` 增加 `dir_exists`，后端通过 `Path::exists()` 判定，前端用 `⊘` + 删除线 + 半透明区分
