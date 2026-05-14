@@ -30,3 +30,8 @@ target/
 *.db
 *.db-journal
 .ace-tool/
+
+# Internal design notes / planning docs (kept locally, not published)
+_docs/*
+!_docs/.gitkeep
+.claude/plan/
