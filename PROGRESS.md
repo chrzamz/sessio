@@ -75,6 +75,9 @@
 
 ## 变更日志
 
+### 2026-05-15
+- 新增 `sessio` SVG logo 与 favicon，替换默认 Vite 标题/图标
+
 ### 2026-05-14
 - 项目重命名 `ai-session-hub` → `Sessio`，开源到 https://github.com/chrzamz/sessio（双协议 MIT/Apache-2.0，双语 README）
 - 项目别名落地：`project_aliases` 表 + 3 个 Tauri 命令 + `MergeDialog` 组件；改名后的失效目录可一键合并到新目录，session 数自动累加

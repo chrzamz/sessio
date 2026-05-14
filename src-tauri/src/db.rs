@@ -91,6 +91,8 @@ impl Database {
             "INSERT INTO sessions (id, tool, source_path, project_dir, project_name, first_message, message_count, user_message_count, file_size, created_at, updated_at, is_subagent, indexed_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
              ON CONFLICT(source_path) DO UPDATE SET
+                project_dir = excluded.project_dir,
+                project_name = excluded.project_name,
                 first_message = excluded.first_message,
                 message_count = excluded.message_count,
                 user_message_count = excluded.user_message_count,

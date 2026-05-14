@@ -1,0 +1,16 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Sessio mark</title>
+  <desc id="desc">A simple S-shaped session path with indexed nodes.</desc>
+  <defs>
+    <linearGradient id="accent" x1="34" y1="30" x2="96" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14B8A6"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#F8FAFC"/>
+  <rect x="8" y="8" width="112" height="112" rx="28" stroke="#D8E2EC" stroke-width="2"/>
+  <path d="M84 34H52C41.5 34 34 40.5 34 49C34 58 41.5 64 52 64H76C86.5 64 94 70 94 79C94 88 86.5 94 76 94H44" stroke="#111827" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="44" cy="34" r="7" fill="url(#accent)"/>
+  <circle cx="84" cy="64" r="7" fill="url(#accent)"/>
+  <circle cx="44" cy="94" r="7" fill="url(#accent)"/>
+</svg>
